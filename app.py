@@ -7,7 +7,7 @@ app = Flask(__name__)
 # MongoDB connection string from environment variable
 mongo_uri = os.getenv("MONGODB_URI")
 client = MongoClient(mongo_uri)
-db = client.['sea-turtle']
+db = client['sea-turtle']
 
 @app.route('/data', methods=['GET'])
 def get_data():
