@@ -1,18 +1,21 @@
+from flask import Flask, jsonify
 from pymongo import MongoClient
+import os
 
-mongo_uri = "mongodb+srv://Bisma:Bisma123@cluster0.r1tthak.mongodb.net/"
-client = MongoClient(mongo_uri)
+app = Flask(__name__)
+
+MONGODB_URI = "mongodb+srv://Bisma:Bisma123@cluster0.r1tthak.mongodb.net/"
+client = MongoClient(MONGODB_URI)
 db = client['sea-turtle']
 
+@app.route('/data', methods=['GET'])
 def get_data():
-    # Replace 'your_collection' with the name of your collection
     collection = db['drugs']
     data = collection.find()
     data_list = list(data)
     for item in data_list:
         item['_id'] = str(item['_id'])  # Convert ObjectId to string
-        print('item', item)
-    return 
+    return jsonify(data_list)
 
 if __name__ == '__main__':
-    get_data()
+    app.run(debug=True)
