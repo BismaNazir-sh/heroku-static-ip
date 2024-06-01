@@ -7,12 +7,12 @@ app = Flask(__name__)
 # MongoDB connection string from environment variable
 mongo_uri = os.getenv("MONGODB_URI")
 client = MongoClient(mongo_uri)
-db = client.get_database()
+db = client.['sea-turtle']
 
 @app.route('/data', methods=['GET'])
 def get_data():
     # Replace 'your_collection' with the name of your collection
-    collection = db['your_collection']
+    collection = db['drugs']
     data = collection.find()
     data_list = list(data)
     for item in data_list:
