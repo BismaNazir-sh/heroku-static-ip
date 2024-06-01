@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html>
+  <head>
+    <link rel="shortcut icon" href="{% static 'images/favicon.png' %}" >
+    {% include "style.css" %}
+    <title>Login</title>
+    <!-- Include Bootstrap CSS -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            /* Replace with your own texture image URL */
+            background-image: url('https://www.transparenttextures.com/patterns/brushed-alum-dark.png');
+            background-repeat: repeat;
+        }
+        .login-container {
+            max-width: 300px;
+            margin: auto;
+            padding-top: 100px;
+        }
+        .login-form {
+            padding: 20px;
+            border: 1px solid #cccccc;
+            border-radius: 5px;
+            background-color: #ffffff;  /* Add a background color to make the form stand out from the textured background */
+        }
+    </style>
+</head>
+<body>
+    <div class="container login-container">
+        <h1 class="text-center">5Axis</h1>
+        <h2 class="text-center">Shipping Terminal</h2>
+        <h2 class="text-center">Login</h2>
+        <div class="login-form">
+            <form method="post" action="/login/">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" id="username" name="username" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" id="password" name="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Login</button>
+            </form>
+        </div>
+    </div>
+    <!-- Include Bootstrap JS -->
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+</body>
+</html>

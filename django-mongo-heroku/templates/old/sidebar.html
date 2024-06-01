@@ -1,0 +1,63 @@
+<nav class="bg-secondary sidebar">
+  <div class="sidebar">
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link" href={% url 'orders' %}>Orders</a>
+      </li>
+
+      {% if request.session.role == 'super_admin' %}
+
+      <li class="nav-item has-submenu expanded">
+        <a class="nav-link" href="#">
+          Management {% include "icons/chevron-left-icon.html" %}
+        </a>
+        <ul class="submenu show">
+          <li>
+            <a class="nav-link" href={% url 'pharmacy_management' %}>
+              Pharmacy Management
+            </a>
+          </li>
+
+          <li>
+            <a class="nav-link" href={% url 'user_management' %}>
+              Users Management 
+            </a>
+          </li>
+        </ul>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+</nav>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".sidebar .nav-link").forEach(function (element) {
+      element.addEventListener("click", function (e) {
+        let nextEl = element.nextElementSibling;
+        let parentEl = element.parentElement;
+
+        if (nextEl) {
+          e.preventDefault();
+          let mycollapse = new bootstrap.Collapse(nextEl);
+
+          console.log('parentEl: ', parentEl)
+          element.classList.toggle("list-collapsed");
+          parentEl.classList.toggle('expanded')
+          if (nextEl.classList.contains("show")) {
+            mycollapse.hide();
+            //parentEl.classList.remove('expanded')
+          } else {
+            mycollapse.show();
+            //parentEl.classList.add('expanded')
+
+            var opened_submenu = parentEl.parentElement.querySelector(".submenu.show");
+            if (opened_submenu) {
+              new bootstrap.Collapse(opened_submenu);
+            }
+          }
+        }
+      }); // addEventListener
+    }); // forEach
+  });
+</script>

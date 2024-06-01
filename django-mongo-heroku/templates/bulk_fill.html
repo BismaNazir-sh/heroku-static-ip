@@ -1,0 +1,347 @@
+{% extends 'base.html' %}
+
+{% block title %}
+  Orders - MDExam
+{% endblock %}
+
+{% block content %}
+  <div>
+    <h4>BULK FILL</h4>
+
+    <form class="orders-form" style="flex-wrap: wrap;">
+      <div class="form-section">
+        <div class="form-fields">
+          <label for="start-date">Start Date:</label>
+          <input type="date" id="start-date" name="start-date" onchange="validateDate()" />
+        </div>
+
+        <div class="form-fields">
+          <label for="end-date">End Date:</label>
+          <input type="date" id="end-date" name="end-date" onchange="validateDate()"/>
+        </div>
+        {% if request.session.role == 'super_admin' %}
+        <div class="form-fields">
+           <label for="pharmacy-select">Pharmacies:</label>
+           <select id="pharmacy-select"></select>
+        </div>
+      </div>
+      <div class="new-line"></div>
+      <div class="form-section">
+        {% endif %}
+        <div class="form-fields">
+          <label for="drug-options">Drugs:</label>
+          <select id="drug-options" onchange="fetchAllOrdersData()"></select>
+        </div>
+    
+      <button class="btn btn-primary text-white" type="submit" id="submit-button" onclick="fetchAllOrdersData(event)" style="margin-top: 18px;">Search</button>
+      </div>
+
+    </form>
+
+    <div>
+      <button class="no-print base-btn" id="bulk-fill-button" onclick="bulkFillFunction()" >Fill All Orders</button>
+           
+      </div>
+    </div>
+
+    <div id="spinner" style="display: none; justify-content: center; align-items: center; height: 10px; flex-direction: column; display: none;">
+      <img src="https://i.pinimg.com/originals/3e/f0/e6/3ef0e69f3c889c1307330c36a501eb12.gif" alt="Loading..." style="width: 40px; height: 40px;">   
+      <p>Processing orders</p>
+    </div>
+
+    <div class="paginator">
+      <p id="pageInfo"></p>
+      <div class="paginator-controls">
+        <button id="prevPage">Previous Page</button>
+        <button id="nextPage">Next Page</button>
+      </div>
+    </div>
+  
+
+
+    <table id="ordersTable" class="mytable">
+      <!-- Table content goes here -->
+    </table>
+
+    
+  </div>
+  <script>
+    function validateDate() {
+    var startDate = document.getElementById('start-date').value;
+    var endDate = document.getElementById('end-date').value;
+    if (endDate < startDate) {
+        alert('End date should be greater than or equal to start date');
+        document.getElementById('end-date').value = startDate;
+    }
+  }
+  </script>
+
+  
+
+  <script>
+    window.onload = function () {
+      var today = new Date().toISOString().split('T')[0]
+      var date = new Date()
+      date.setDate(date.getDate() - 7)
+      var weekAgo = date.toISOString().split('T')[0]
+      document.getElementById('start-date').value = weekAgo
+      //document.getElementById('start-date').value = today;
+      document.getElementById('end-date').value = today
+
+      fetchDrugOptions();
+      fetchAllPharmacies();
+      fetchAllOrdersData()
+    }
+  </script>
+<script>
+  function fetchAllPharmacies() {
+      var select = document.getElementById('pharmacy-select');
+      if (select === undefined || select === null) {
+          return;
+      }
+
+      fetch('/pharmacy/fetch_all_pharmacies/')
+          .then((response) => response.json())
+          .then((result) => {
+              console.log(result);
+
+              // Add "All" option
+              var allOption = document.createElement('option');
+              allOption.value = '';
+              allOption.text = 'All';
+              select.add(allOption);
+
+              result.data.forEach(function (pharmacy) {
+                  var option = document.createElement('option');
+                  option.value = pharmacy.pharmacyId;
+                  option.text = pharmacy.name;
+                  select.add(option);
+              });
+          });
+  }
+</script>
+
+<script>
+  function fetchDrugOptions() {
+    // Fetch drugs from your server
+    fetch('/pharmacy/fetch_drug_options/')
+      .then((response) => response.json())
+      .then((data) => {
+        var select = document.getElementById('drug-options')
+
+        // Add "All" option
+        var allOption = document.createElement('option')
+        allOption.value = ''
+        allOption.text = 'All'
+        allOption.selected = true
+        select.prepend(allOption)
+
+        data.forEach(function (status) {
+          var option = document.createElement('option')
+          option.value = status
+          option.text = status
+          select.add(option)
+        })
+      })
+  }
+</script>
+
+
+<script>
+  function bulkFillFunction() {
+    var spinner = document.getElementById('spinner');
+    spinner.style.display = 'flex'; // Show the spinner
+    var drugs = document.getElementById('drug-options').value
+    var startDate = document.getElementById('start-date').value
+    var endDate = document.getElementById('end-date').value
+    
+    // if pharmacy filter is hidden in case of pharmacy_admin, send null
+    var pharmacy = document.getElementById('pharmacy-select');
+      var pharmacy_id = null;
+      if (pharmacy !== undefined && pharmacy !== null) {
+          pharmacy_id = pharmacy.value;
+      }
+    
+      var userInput = prompt("Please enter your name:");
+    if (userInput === null || userInput.trim() === '') {
+      alert("No name provided");
+      spinner.style.display = 'none'; // Hide the spinner
+      return;
+    }
+    fetch('/pharmacy/bulk_fill_orders/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({startDate: startDate, endDate: endDate, personalCode :userInput,drugs:drugs,pharmacy: pharmacy_id})
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        var parsedData = data
+        console.log(parsedData)
+      })
+      .finally(() => {
+        spinner.style.display = 'none'; // Hide the spinner
+        alert("Please come back in few minutes to check the status of the labels")
+        fetchAllOrdersData()
+      });
+  }
+  </script>
+
+  <script>
+    var currentPage = 1
+    var max_pages = 2
+    function fetchAllOrdersData() {
+      spinner.style.display = 'flex'; // Show the spinner
+      if (event) {
+        //incase it is trigerred by search button set page to 1 and ignor submit event
+    
+        if (event.target.id === 'submit-button') {
+          currentPage = 1
+          event.preventDefault()
+        }
+      }
+      var orderStatus = "{{ orderStatus }}"
+      var status  = orderStatus
+      
+      var doctor = ''
+      var startDate = document.getElementById('start-date').value
+      var endDate = document.getElementById('end-date').value
+
+      // if pharmacy filter is hidden in case of pharmacy_admin, send null
+       var pharmacy = document.getElementById('pharmacy-select');
+      var pharmacy_id = null;
+      if (pharmacy !== undefined && pharmacy !== null) {
+          pharmacy_id = pharmacy.value;
+      }
+    
+
+
+      var drugs = document.getElementById('drug-options').value
+      var search_value = ''
+      var page = currentPage
+    
+      fetch('/pharmacy/fetch_all_orders_data/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ page: page, status: status, startDate: startDate, endDate: endDate, search_value:search_value, doctor:doctor, drugs:drugs,pharmacy: pharmacy_id })
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          var parsedData = data.data
+          console.log(parsedData)
+    
+          // Create a table
+          var table = document.getElementById('ordersTable')
+          table.innerHTML = ''
+    
+          // Update the page info
+          const itemsPerPage = 20
+          var start = itemsPerPage * (page - 1) + 1
+          var end = itemsPerPage * page
+    
+          max_pages = Math.ceil(data.total_count / itemsPerPage)
+    
+          //handling count on last page
+          if (end > data.total_count) {
+            end = data.total_count
+          }
+    
+          //if no result
+          if (data.total_count == 0) {
+            document.getElementById('pageInfo').textContent = `No Orders Found, Please try changing the filter criteria`
+            spinner.style.display = 'none'; // Show the spinner
+          } else {
+            document.getElementById('pageInfo').textContent = `${data.total_count} Records Found. Showing (${start}-${end}) Page ${page} of ${Math.ceil(data.total_count / itemsPerPage)}`
+          }
+    
+          // Create table header row
+          var thead = document.createElement('thead')
+          var headerRow = document.createElement('tr')
+    
+          // Get keys from the first object in the data array
+          var keys = Object.keys(parsedData[0])
+    
+          // Create a table header for each key
+          keys.forEach((key) => {
+            var th = document.createElement('th')
+            th.textContent = key
+            headerRow.appendChild(th)
+          })
+    
+          // Add an empty header cell for the "View Detail" button
+          var emptyCell = document.createElement('th')
+          headerRow.appendChild(emptyCell)
+    
+          // Add the header row to the table
+          thead.appendChild(headerRow)
+          table.appendChild(thead)
+    
+          // Create table body
+          var tbody = document.createElement('tbody')
+    
+          // Create a table row for each object in the data array
+          var temp_order_id = 0
+          parsedData.forEach((item) => {
+            var row = document.createElement('tr')
+    
+            // Create a table cell for each value in the object
+            keys.forEach((key) => {
+              var cell = document.createElement('td')
+    
+              if (key === 'Order Id') {
+                temp_order_id = item[key]
+                cell.textContent = item[key]
+              }
+    
+              if (key === 'Drug Info') {
+                var drugInfo = item[key].map((drug) => `• ${drug.drug}, ${drug.quantity}`).join('<br>')
+                cell.innerHTML = drugInfo
+              } else {
+                cell.textContent = item[key]
+              }
+              row.appendChild(cell)
+            })
+    
+            // Add "View Detail" button
+            var detailCell = document.createElement('td')
+            var detailButton = document.createElement('a')
+            detailButton.href = `/pharmacy/show_order_details?order_id=${temp_order_id}`
+            detailButton.target = '_blank'
+            detailButton.textContent = 'View Details'
+            detailCell.appendChild(detailButton)
+            row.appendChild(detailCell)
+    
+            tbody.appendChild(row)
+          })
+    
+          table.appendChild(tbody)
+          spinner.style.display = 'none'; // Show the spinner
+        })
+    }
+  </script>
+
+  <script>
+    // Add event listeners to the pagination buttons
+    document.getElementById('prevPage').addEventListener('click', function () {
+    if (currentPage > 1) {
+        currentPage--;
+        fetchAllOrdersData();
+    } else if (currentPage == 1) {
+        alert('You are on the first page');
+        return;
+    }
+    })
+    
+    document.getElementById('nextPage').addEventListener('click', function () {
+      if (currentPage + 1 > max_pages) {
+        alert('You are on the last page');
+        return
+      }
+      currentPage++
+      fetchAllOrdersData()
+    })
+  </script>
+{% endblock %}

@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Orders Portal</title>
+    {% include "style.css" %}
+    
+</head>
+<body>
+    <h1>Order Details</h1>
+    <div style="margin:3%">
+    <h2>Patient Details</h2>
+    <h1>Order Id: {{ pharmacy_order_id }}</h1>
+    <p>Patient: {{ firstName }} {{lastName}}</p>
+    <p>Phone Number: {{ phoneNumber }}</p>
+    <p>Email: {{ email }}</p>
+    <p>Address: {{ address }} {{line2}}, {{ city }}, {{ state }}, {{ zipCode }}</p>
+    
+    <p>Pharmacy: {{scripts.0.pharmacy}}</p>
+    <p>Status : {{status}}</p>
+    <p>Recieved At: {{order_recieved_at}}</p>
+    </div>
+    <!-- Loop over the scripts -->
+    <h2>Scripts by Doctor</h2>
+    <table class="mytable">
+        <thead>
+            <tr>
+                <th>Script Number</th>
+                <th>Prescribed Date</th>
+                <th>Prescriber</th>
+                <th>Refills</th>
+                <th>Quantity</th>
+                <th>Unit</th>
+                <th>Drug Name</th>
+                <th>Sig</th>
+                <!-- Add more headers as needed -->
+            </tr>
+        </thead>
+        <tbody>
+            {% for script in scripts %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ script.date_prescribed }}</td>
+                    <td>{{ script.doctor }}</td>
+                    <td>{{ script.number_refills }}</td>
+                    <td>{{ script.dispense_quantity }}</td>
+                    <td>{{ script.dispense_unit }}</td>
+                    <td>{{ script.name }}</td>
+                    <td>{{ script.sig}}</td>
+                    <!-- Add more fields as needed -->
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button class="no-print" id="mark-cancelled-button" onclick="markOrder('CANCELLED')" {% if COMPLETE_FILLED or CANCELLED %}disabled{% endif %}>Mark as Cancelled</button>
+    <button class="no-print" id="mark-complete-button" onclick="markOrder('COMPLETE_FILLED')" {% if COMPLETE_FILLED  or CANCELLED %}disabled{% endif %}>Mark as Complete</button>
+    <button class="no-print" id="complete-fill-button" onclick="generateFill('Complete')" {% if COMPLETE_FILLED or CANCELLED %}disabled{% endif %}>Fill Entire Order</button>
+    <button class="no-print" id="partial-fill-button" onclick="generateFill('Partial')" {% if COMPLETE_FILLED or CANCELLED %}disabled{% endif %}>Fill Partial Order</button>
+
+
+    <!-- Loop over the fills -->
+    <h2>Pharmacy Fills
+        {% if COMPLETE_FILLED %}
+        (Order Completely Filled)
+        {% endif %}
+
+        {% if CANCELLED %}
+        (Order Cancelled)
+        {% endif %}
+
+    </h2>
+
+
+    {% for fill_list in fills %}
+            <p>Fill Id: {{ fill_list.fill_id }}</p>
+            <p>Fill Date:{{fill_list.fill_date}}</p>
+            <p>Fill By:{{fill_list.fill_by}}</p>
+            <p>Tracking Number: {{fill_list.tracking_number}}</p>
+            <a>Tracking Link: <a target="_blank" href="{{fill_list.tracking_url}}">Tracking Link</a></a>
+            <a>Shipping Label: <a target="_blank" href="{{fill_list.shipping_label_pdf_url}}">Shipping Label</a></a>
+            <table class="mytable">
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Fill Name</th>
+                        <th>Fill Quantity</th>
+                        <th>Fill Unit</th>
+                        
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in fill_list.items %}
+                    <tr>
+                        <td>{{ forloop.parentloop.counter }}</td>
+                        <td>{{item.name}}</td>
+                        <td>{{ item.dispense_quantity }}</td>
+                        <td>{{ item.dispense_unit }}</td>
+                        
+                    </tr>
+                {% empty %}
+                    <p>No fills yet</p>
+                {% endfor %}    
+                </tbody>
+            </table>
+
+            {% if fill_list.shipping_label_pdf_url %}
+            <td><button class="no-print" id="printButton" onclick="printIframe('{{ fill_list.shipping_label_pdf_url }}')" >Print Shipping Label</button></td>
+            {% endif %}
+
+            {% if not fill_list.shipping_label_pdf_url %}
+            <td><button class="no-print" id="generateButton" onclick="generateShippingLabel({{ fill_list.fill_id }})" >Generate Shipping Label</button></td>
+            
+            <select id="shippingOptions" name="shippingOptions">
+                <option value="202" selected>Next Day</option>
+                <option value="203">2nd Day</option>
+            </select> 
+            
+            <label for="package_weight">Package Weight (Pounds):</label>
+            <input type="number" id="package_weight" name="package_weight" min="1" placeholder="Package Weight (Pounds)">
+
+            <label for="package_dimension1">Package Dimension01 (Inch):</label>
+            <input type="number" id="package_dimension1" name="package_dimension1" min="1" placeholder="Package Dimension01 (Inch)">
+
+            <label for="package_dimension2">Package Dimension02 (Inch):</label>
+            <input type="number" id="package_dimension2" name="package_dimension2" min="1" placeholder="Package Dimension02 (Inch)">
+
+            <label for="package_dimension3">Package Dimension03 (Inch):</label>
+            <input type="number" id="package_dimension3" name="package_dimension3" min="1" placeholder="Package Dimension03 (Inch)">
+
+            {% endif %}
+            
+
+
+            {% endfor %}
+
+
+    <div style="margin:3%">
+        <button class = "no-print" onclick="window.close()">Close Order</button>
+        <!--
+        <embed id="shippingLabelEmbed" src="{{shipping_label_pdf_url}}" type="application/pdf" width="450px" height="670px" 
+        style="border:2px solid black; margin:10px 0px;"/>
+        -->
+
+    </div>
+    
+    <script>
+        window.onload = function() {
+            /*var embed = document.getElementById('shippingLabelEmbed');
+            var printButton = document.getElementById('printButton');
+            if (embed.src) {
+                printButton.disabled = false;
+                embed.style.transform = "rotate(180deg)";
+            }*/
+        }
+    
+        
+    </script>
+
+    <script>
+        function generateShippingLabel(fill_id) {
+        
+        package_weight = document.getElementById('package_weight').value;
+        package_dimension1 = document.getElementById('package_dimension1').value;
+        package_dimension2 = document.getElementById('package_dimension2').value;
+        package_dimension3 = document.getElementById('package_dimension3').value;
+
+        if (!package_weight || !package_dimension1 || !package_dimension2 || !package_dimension3) {
+            alert("All fields must be filled out");
+            return;
+        }
+
+        //if weight is greater than 15 return error
+        if (package_weight > 15) {
+            alert("Package weight cannot be greater than 15 pounds");
+            return;
+        }
+
+
+        var userInput = prompt("Please enter your name:");
+        while (userInput == null || userInput.trim() === '') {
+            userInput = prompt("Please enter your name:");
+        }
+        console.log("User input: " + userInput);
+        var rate_service_code = document.getElementById('shippingOptions').value;
+        var pharmacy_order_id = "{{pharmacy_order_id}}";
+        
+        fetch('/pharmacy/generate_shipping_label/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({pharmacy_order_id: pharmacy_order_id, fill_id: fill_id, personal_code: userInput,
+                 rate_service_code: rate_service_code, package_weight: package_weight, package_dimension1: package_dimension1,
+                 package_dimension2: package_dimension2, package_dimension3: package_dimension3}),
+        })
+        .then(response => {
+            if (response.status !== 200) {
+                response.json().then(data => {
+                    alert('Error: ' + response.status + ', ' + data.message + '. Generate Shipping Label Failed');
+                });
+                return;
+            }
+            location.reload();
+            
+            return response.json();
+        })
+        .then(data => {
+            var shippingLabelPdfUrl = data.shipping_label_pdf_url;
+                console.log(shippingLabelPdfUrl);
+                var shippingLabelEmbed = document.getElementById('shippingLabelEmbed');
+                shippingLabelEmbed.src = shippingLabelPdfUrl;
+                shippingLabelEmbed.style.transform = "rotate(180deg)";
+
+                var shippingLabelPdfUrl = document.getElementById('shippingLabelEmbed').src;
+            
+                if(shippingLabelPdfUrl !== "" && shippingLabelPdfUrl !== null){
+                    var printButton = document.getElementById('printButton');
+                    if(printButton) {
+                        printButton.disabled = false;
+                    }
+                }
+            
+            
+
+        });
+            
+        }
+    </script>
+
+    <script>
+        function generateFill(fill_type) 
+        {
+        
+        var userInput = prompt("Please enter your name:");
+        if (userInput === null || userInput.trim() === '') {
+            alert("No name provided");
+            return;
+        }
+        console.log("User input: " + userInput);
+
+        var script_dict = {};
+        if (fill_type === 'Partial') {
+            //for loop to create a dictionary where name is script name taken from script.name and quantity is entered by user using prompts
+            var scripts = {{ scripts|safe }};
+            
+            for (var i = 0; i < scripts.length; i++) {
+                var script_name = scripts[i].name;
+                var script_quantity = prompt("Please enter quantity for " + script_name + ":");
+                if (script_quantity === null || script_quantity.trim() === '' || isNaN(script_quantity) || script_quantity < 0) {
+                    alert("Please provide a valid quantity (0 or greater) for " + script_name);
+                    return;
+                }
+                console.log("User input for " + script_name + ": " + script_quantity);
+                
+                script_dict[script_name] = script_quantity;
+                console.log(script_dict);
+            }
+        }
+        
+        var pharmacy_order_id = "{{pharmacy_order_id}}";
+        
+        fetch('/pharmacy/generate_fill/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({pharmacy_order_id: pharmacy_order_id, personal_code: userInput, fill_type: fill_type, script_dict: script_dict}),
+        })
+        .then(response => {
+            if (response.status !== 200) {
+                alert('Error: ' + response.status +' Generate Complete Fill Failed');
+                return ;
+            }
+            location.reload();
+            return response.json();
+        });
+            
+        }
+
+    </script>
+
+    <script>
+        function markOrder(order_status) 
+        {
+            var pharmacy_order_id = "{{pharmacy_order_id}}";
+            var userInput = prompt("Please enter your name:");
+        if (userInput === null || userInput.trim() === '') {
+            alert("No name provided");
+            return;
+        }
+        fetch('/pharmacy/mark_order/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({pharmacy_order_id: pharmacy_order_id, personal_code: userInput, order_status: order_status}),
+        })
+        .then(response => {
+            if (response.status !== 200) {
+                alert('Error: ' + response.status +' Marking as Complete Failed');
+                return ;
+            }
+            location.reload();
+            return response.json();
+        });
+            
+        }
+
+
+    </script>
+
+
+    <script>
+        function printIframe(label_url) {
+ 
+        //var url = document.getElementById('shippingLabelEmbed').src;
+        url = label_url;
+        alert("Printing Label");
+        var proxyIframe = document.createElement('iframe');
+        var body = document.getElementsByTagName('body')[0];
+        body.appendChild(proxyIframe);
+        proxyIframe.style.width = '431px';
+        proxyIframe.style.height = '651px';
+        proxyIframe.style.display = 'none';
+
+        var contentWindow = proxyIframe.contentWindow;
+        contentWindow.document.open();
+        // Set dimensions according to your needs.
+        // You may need to calculate the dynamically after the content has loaded
+        contentWindow.document.write('<iframe src="' + url + '" onload="print();" width="431px" height="651px" frameborder="0" style="transform:rotate(180deg);" marginheight="0" marginwidth="0">');
+        contentWindow.document.close();
+    }
+
+    </script>
+
+
+
+
+
+</body>
+
+
+
+</html>

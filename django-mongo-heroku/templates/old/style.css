@@ -1,0 +1,163 @@
+<style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .logout-btn {
+            background-color: red;
+            color: white;
+            border-radius: 8px;
+            border: 1px solid red;
+            padding: 6px 12px;
+            font-weight: 500;
+        }
+
+        .logout-btn:hover {
+            background-color: white;
+            color: red;
+        }
+
+        .orders-form {
+            margin: 20px 0;
+            display: flex;
+            align-items: center;
+            column-gap: 16px;
+            justify-content: space-between;
+            background-color: #eee;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        
+        .orders-form .form-section {
+            display: flex;
+            align-items: center;
+            column-gap: 16px;
+        }
+
+        .orders-form .form-fields {
+            display: flex;
+            flex-direction: column;
+            row-gap: 4px;
+        }
+
+        .orders-form .form-fields>label {
+            margin-bottom: 0px;
+            font-weight: 500;
+            font-size: 12px;
+        }
+
+        .orders-form .form-fields>input {
+            border: none;
+            padding: 4px 10px;
+            border-radius: 5px;
+        }
+        
+        .orders-form .form-fields>select {
+            border: none;
+            padding: 4px 10px;
+            border-radius: 5px;
+        }
+
+        #data-table {
+            border-collapse: collapse;
+        }
+
+        #data-table th, #data-table td {
+            border: 1px solid black;
+            padding: 5px;
+        }
+
+        #data-table th {
+            background: #f0f0f0;
+        }
+        #interval-select{
+            padding: 7px;
+            border-radius: 5px;
+            width: 200px;
+        }  
+        
+        .mytable {
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .mytable th, .mytable td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .mytable th {
+            background-color: #2aa3e4;
+            color: white;
+        }
+        
+        h1{    
+            color: royalblue;
+            text-align: center;
+        }
+
+        #ordersTable{
+            font-size: small;
+        }
+        
+        .sidebar {
+            width: 245px;
+        }
+
+        .sidebar li {
+            list-style-type: none;
+        }
+
+        .sidebar .nav-item {
+            padding: 0px 12px;
+        }
+
+        .sidebar .nav-link {
+            display: flex !important;
+            justify-content: space-between;
+            align-items: center;
+            color: white; 
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .sidebar .nav-link:hover {
+            background-color: #EFEFEF80; 
+            color: #333;
+        }
+
+        .sidebar .nav-item .submenu {
+            padding-left: 16px;
+        }
+
+        .sidebar .has-submenu svg {
+            transition: rotate 0.5s ease-in-out;
+        }
+
+        .sidebar .has-submenu.expanded svg {
+            rotate: -90deg;
+        }
+
+        .paginator {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 8px;
+        }
+
+        .paginator-controls {
+            display: flex;
+            align-items: center;
+            column-gap: 16px;
+        }
+
+        .paginator-controls button {
+            border: 1px solid gray;
+            background-color: #eee;
+            padding: 4px 8px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+    </style>

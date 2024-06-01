@@ -1,0 +1,1107 @@
+<!DOCTYPE html>
+{% load static %}
+
+<html>
+  <head>
+    <link rel="shortcut icon" href="{% static 'images/favicon.png' %}" >
+
+    <title>Orders Portal</title>
+    {% include "style.css" %}
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"/>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
+    <style>
+        .hidden {
+            display: none;
+        }
+
+        .popup-form {
+            border-radius:15px;
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border: 4px solid #ccc;
+            z-index: 1000;
+        }
+
+        input, label {
+            margin: 8px 0;
+        }
+
+        hr.solid {
+          border-top: 3px solid #bbb;
+        }
+    </style>
+</head>
+<body style="width: 100%; margin: auto">
+    <h4 style="width: 100%; text-align: center; background-color: royalblue; color: white; margin: 0px; padding:10px 0px;">
+        Order Details ({{ order_id }})
+    </h4>
+
+    <div style="width: 100%; padding: 0px 20px 50px 20px;">
+        <div style="display: flex; justify-content: flex-end; ">    
+            <button class="logout-btn" onclick="window.close()" style="cursor: pointer; margin: 10px 0;">Close Tab</button>
+        </div>
+
+        <div class="order-details-box" style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+            <div style="flex: 1;">
+                <h5 class="pb-2">Patient Details</h5>
+                <p class="information-text">
+                    <span style="font-weight: 600">Patient:</span> {{ firstName }} {{lastName}}
+                </p>
+                
+                <p class="information-text">
+                    <span style="font-weight: 600">DOB:</span> {{ dob }}
+                </p>
+
+                <p class="information-text">
+                    <span style="font-weight: 600">Phone Number:</span> {{ phoneNumber }}
+                </p>
+
+                <p class="information-text">
+                    <span style="font-weight: 600">Email:</span> {{ email }}
+                </p>
+
+                <p class="information-text">
+                    <span style="font-weight: 600">Address:</span> {{ address.address }} {{address.line2}}, {{ address.city }}, {{ address.state }}, {{ address.zipCode }}
+                
+                    {% if address_validation_failed %}
+                        <button id="edit_address_button" class="fa fa-pen" onclick="showEditAddressFields()" style="font-weight: 600; background-color: white; color: red; border:none;">(Please update address)</button>
+                        <div id="edit_address_fields" display: none;
+                        style="width: 230px;
+                        border: solid 3px royalblue;
+                        padding: 5px;
+                        border-radius: 5px;
+                        margin-left: 110px;">
+                            Address:<input type="text" id="address_input" value="{{ address.address }}" placeholder="Address">
+                            Line2:<input type="text" id="line2_input" value="{{ address.line2 }}" placeholder="Address Line 2">
+                            City:<input type="text" id="city_input" value="{{ address.city }}" placeholder="City">
+                            State:<input type="text" id="state_input" value="{{ address.state }}" placeholder="State">
+                            ZipCode:<input type="text" id="zipCode_input" value="{{ address.zipCode }}" placeholder="Zip Code">
+                            <input type="checkbox" id="address_certify" name="address_certify">
+                            <label for="address_certify" style="font-size: small;color:red;">APPLY FORCE VALIDATION </label>
+                           
+                            <button onclick="updateAddress()" style="font-weight: 300; color: green; border:2px solid green; border-radius: 3px; margin: 5px;">Save</button>
+                        </div>
+                    {% endif %}
+                </p>
+                
+            </div>
+
+            <div style="flex: 1;">
+                <h5 class="pb-2">Order Details</h5>
+                <p class="information-text"><span style="font-weight: 600">Pharmacy:</span> {{pharmacy}}</p>
+                <p class="information-text"><span style="font-weight: 600">Doctor:</span> {{scripts.0.doctor_name}}</p>
+                <p class="information-text"><span style="font-weight: 600">Status:</span> {{status}}</p>
+                <p class="information-text"><span style="font-weight: 600">Received At:</span> {{order_recieved_at}}</p>
+                {% if statusHistory.CANCELLED %}
+                    <p class="information-text">
+                        <span style="font-weight: 600">Cancelled At:</span> 
+                        <span id="cancelledAt"></span>
+                    </p>
+                {% endif %}
+                {% if next_refill_date %}
+                    <p class="information-text">
+                        <span style="font-weight: 600">Refill Due:</span> {{ next_refill_date }}
+                    </p>
+                {% endif %}
+                
+            </div>
+        </div>
+
+        <div class="order-details-box">
+            <h5 class="pb-2">Scripts by Doctor</h5>
+            <table class="mytable">
+                <thead>
+                    <tr>
+                        <th>Script Number</th>
+                        <th>Prescribed Date</th>
+                        <th>Prescriber</th>
+                        <th>Refills</th>
+                        <th>Quantity</th>
+                        <th>Unit</th>
+                        <th>Drug Name</th>
+                        <th>Sig</th>
+                        <!-- Add more headers as needed -->
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for script in scripts %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>{{ script.date_prescribed }}</td>
+                            <td>{{ script.doctor }}</td>
+                            <td>{{ script.number_refills }}</td>
+                            <td>{{ script.dispense_quantity }}</td>
+                            <td>{{ script.dispense_unit }}</td>
+                            <td>{{ script.name }}</td>
+                            <td>{{ script.sig}}</td>
+                            <!-- Add more fields as needed -->
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <br />
+            {% if not fills %}
+            <button class="no-print base-btn red-btn" id="mark-cancelled-button" onclick="markOrder('CANCELLED')" {% if statusHistory.COMPLETED or statusHistory.CANCELLED %}disabled{% endif %}>CANCEL ORDER</button>
+            {% endif %}
+            <!--
+            <button class="no-print base-btn" id="mark-complete-button" onclick="markOrder('COMPLETED')" {% if statusHistory.COMPLETED  or statusHistory.CANCELLED %}disabled{% endif %}>Mark as Complete</button>
+            -->
+            <button class="no-print base-btn" id="complete-fill-button" onclick="generateFill('Complete', '{{integrated_label}}', '{{request.session.pharmacist}}')" {% if statusHistory.COMPLETE_FILLED or statusHistory.CANCELLED  or status == 'CANCELLED' %}disabled{% endif %}>Fill Entire Order</button>
+            <button class="no-print base-btn orange-btn" id="partial-fill-button" onclick="generateFill('Partial', '{{integrated_label}}', '{{request.session.pharmacist}}')" {% if statusHistory.COMPLETE_FILLED or statusHistory.CANCELLED  or status == 'CANCELLED' %}disabled{% endif %}>Fill Partial Order</button>
+
+            {% if request.session.can_reopen_order == True %}                
+            <button class="no-print base-btn red-btn" id="reopen-button" onclick="generateFill('Force_Partial', '{{integrated_label}}', '{{request.session.pharmacist}}')" {% if statusHistory.CANCELLED  or status == 'CANCELLED' or status == 'TO_BE_FILLED' or status == 'PARTIAL_FILL' %}disabled{% endif %}>Reopen Order</button>
+            {% endif %}
+
+
+        </div>
+        
+        <h5 style="padding: 10px 20px;">
+            Pharmacy Fills
+            {% if not fills %}
+            (No fills yet)
+            {% endif %}
+
+            {% if statusHistory.COMPLETE_FILLED %}
+            (Order Completely Filled)
+            {% endif %}
+
+            {% if statusHistory.CANCELLED or status == "CANCELLED" %}
+            (Order Cancelled)
+            {% endif %}
+        </h5>
+
+        <!-- Loop over the fills -->
+        {% for fill_list in fills %}
+            <div style="margin: 0px 20px; padding: 0 20px;">
+                <h6 style="display: flex; align-items: center; column-gap: 8px; color: royalblue;">
+                    <div 
+                        id="arrow{{fill_list.fill_id}}" 
+                        style="cursor: pointer; transition: transform 0.3s ease-in-out; color: royalblue;" 
+                        onclick="event.stopPropagation(); toggleDiv('{{fill_list.fill_id}}');"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg"  fill="#4169e1" height="16" width="12" viewBox="0 0 384 512">
+                            <path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/>
+                        </svg>
+                    </div>
+                    <div style="font-weight: 600; color:black">Fill Id:</div> {{fill_list.fill_id}}({{ fills.0.fill_date }})
+                </h6>
+                <div class="order-details-box" id="infoDiv{{fill_list.fill_id}}" style="{% if not forloop.first %}display: none;{% endif %}">
+
+                <!--<div class="order-details-box" id="infoDiv{{fill_list.fill_id}}" style="display: none;">-->
+                    <div style="display: grid; width:80%; grid-template-columns: repeat(4, 1fr); grid-gap: 00px;">
+                        <p class="information-text"><span style="font-weight: 600">Fill Id:</span> {{ fill_list.fill_id }}</p>
+                        <p class="information-text"><span style="font-weight: 600">Fill Date:</span> {{fill_list.fill_date}}</p>
+                        <p class="information-text"><span style="font-weight: 600">Fill By:</span> {{fill_list.fill_by}}</p>
+                        <p class="information-text"><span style="font-weight: 600">Fill_status:</span> {{fill_list.fill_status}} </p>
+                        <p class="information-text"><span style="font-weight: 600">Shipping Label:</span> 
+                            {% if fill_list.shipping_label_pdf_url %}
+                                <a target="_blank" href="{{fill_list.shipping_label_pdf_url}}">Shipping Label</a>
+                            {% endif %}
+                        </p>
+
+                        <p class="information-text"><span style="font-weight: 600">Tracking Status:</span> {{fill_list.tracking_status}}</p>
+                        <p class="information-text"><span style="font-weight: 600">Tracking #:</span> {{fill_list.tracking_number}}</p>
+                        <p class="information-text"><span style="font-weight: 600">Tracking Link:</span> 
+                            {% if fill_list.tracking_url %}
+                                <a target="_blank" href="{{fill_list.tracking_url}}">Tracking Link</a>
+                            {% endif %}
+                        </p>
+                    </div>
+                    
+                    <div style="text-align: right;">
+                        <button class="no-print base-btn red-btn" id="mark-cancelled-button" style="margin: 4px;font-size: 12px;padding: 4px;border-radius: 4px;" onclick="markFill('CANCELLED','{{ fill_list.fill_order_id }}')" {% if statusHistory.COMPLETED or statusHistory.CANCELLED or fill_list.fill_status == 'CANCELLED' %}disabled{% endif %}>Cancel Fill</button>
+                    </div>
+
+                    <table class="mytable">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Fill Name</th>
+                                <th>Fill Quantity</th>
+                                <th>Fill Unit</th>
+                                
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in fill_list.items %}
+                            <tr>
+                                <td>{{ forloop.parentloop.counter }}</td>
+                                <td>{{item.name}}</td>
+                                <td>{{ item.dispense_quantity }}</td>
+                                <td>{{ item.dispense_unit }}</td>
+                                
+                            </tr>
+                        {% empty %}
+                            <p>No fills yet</p>
+                        {% endfor %}    
+                        </tbody>
+                    </table>
+                    <br />
+                    
+                    <div class="order-delivery-form">
+                        {% if fill_list.shipping_label_pdf_url %}
+                        <button class="no-print base-btn blue-btn" id="printButton" onclick="printIframe('{{ fill_list.shipping_label_pdf_url }}', '{{is_fedex}}')" >
+                                Print Shipping Label
+                        </button>
+                            {% if integrated_label and not is_fedex %}
+                            <button class="no-print base-btn blue-btn" id="printButton2" onclick="printShippingLabelWithPrescription({{fill_list}}, {{physician_info}}, {{patient_info}}, {{pharmacy_info}}, {{prescription_info}}, {{lower_label_info}})" >
+                                    Print Shipping Label with Prescription
+                            </button>
+                            {% endif %}
+                        {% endif %}
+
+                        {% if not fill_list.shipping_label_pdf_url and fill_list.fill_status != "CANCELLED" and fill_list.fill_status != "DELIVERED" and status != "CANCELLED" and status != "COMPLETED" %}                            
+                            <h5>Generate Shipping Label</h5>
+
+                            <div style="display: flex; justify-content: space-between; column-gap: 12px; margin-bottom: 10px">
+                                <div class="flex-grow-1 form-group">
+                                    <label class="col-form-label col-form-label-sm">Delivery day</label>
+                                    <select class="form-control form-control-sm" name="shippingOptions" id="shippingOptions{{fill_list.fill_id}}">
+                                        {% if is_fedex is True %}
+                                            <!--<option value="FEDEX_ONE_RATE" >FedEx One Rate</option>-->
+                                            <option value="STANDARD_OVERNIGHT" selected>STANDARD_OVERNIGHT</option>
+                                            <option value="FEDEX_2_DAY" >FEDEX_2_DAY</option>
+                                            {% else %}
+                                            <option value="202" selected>Next Day Air Saver</option>
+                                            <option value="204">Next Day Air</option>
+                                            <option value="203">2nd Day</option>
+                                        {% endif %}
+                                    </select> 
+                                </div>
+
+                                <div class="flex-grow-1 form-group">
+                                    <label class="col-form-label col-form-label-sm">Package Weight(lb)</label>
+                                    <input class="form-control form-control-sm" type="number" name="package_weight" id="package_weight{{fill_list.fill_id}}" min="1" placeholder="Package Weight (Pounds)" value="{{weight}}">                                
+                                </div>
+
+                                <div class="flex-grow-1 form-group">
+                                    <label class="col-form-label col-form-label-sm">Package Dimension 1(in)</label>
+                                    <input class="form-control form-control-sm" type="number" name="package_dimension1" id="package_dimension1{{fill_list.fill_id}}" min="1" placeholder="Package Dimension01 (Inch)" value="{{dim1}}">
+                                </div>
+
+                                <div class="flex-grow-1 form-group">
+                                    <label class="col-form-label col-form-label-sm">Package Dimension 2(in):</label>
+                                    <input class="form-control form-control-sm" type="number" name="package_dimension2" id="package_dimension2{{fill_list.fill_id}}" min="1" placeholder="Package Dimension02 (Inch)" value="{{dim2}}">
+                                </div>
+
+                                <div class="flex-grow-1 form-group">
+                                    <label class="col-form-label col-form-label-sm">Package Dimension 3(in):</label>
+                                    <input class="form-control form-control-sm" type="number" name="package_dimension3" id="package_dimension3{{fill_list.fill_id}}" min="1" placeholder="Package Dimension03 (Inch)" value="{{dim3}}">
+                                </div>
+                            </div>
+                            
+                            <button class="no-print base-btn blue-btn  " id="generateButton" onclick="generateShippingLabel({{ fill_list.fill_id }})" >
+                                Generate Shipping Label
+                            </button>
+                            
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    
+    <div class="order-details-footer">
+        All Rights Reserved by 5Axis Health
+    </div>
+
+    <div id="popupForm" class="popup-form hidden">
+        <form id="inputForm">
+            <label for="name">Enter your tech initials:</label>
+            <input type="text" id="name" name="name" required>
+
+            <div id="scriptInputs"></div>
+
+            <button class="no-print base-btn" type="submit">Submit</button>
+            <button class="no-print base-btn red-btn"type="button" onclick="closeForm()">Close</button>
+        </form>
+    </div>
+
+<script>
+    window.onload = function() {
+
+        
+        try {
+            var partialFillButton = document.getElementById('partial-fill-button');
+            var reopenButton = document.getElementById('reopen-button');
+
+            if (!partialFillButton || !reopenButton) {
+                throw new Error('Element not found');
+            }
+
+            if (partialFillButton.disabled) {
+                reopenButton.style.display = 'block';
+                reopenButton.style.margin = '5px 0px';
+                reopenButton.style.padding = '5px';
+            } else {
+                reopenButton.style.display = 'none';
+            }
+        } catch (error) {
+            console.error(error);
+        }
+
+        document.getElementById('edit_address_fields').style.display = 'none';
+
+    }
+</script>
+    
+
+
+    <script>
+        function toggleDiv(fillDateId) {
+            
+            var div = document.getElementById('infoDiv' + fillDateId);
+            var arrow = document.getElementById('arrow' + fillDateId);
+            if (div.style.display === "none") {
+                div.style.display = "block";
+                arrow.style.transform = "rotate(90deg)";
+            } else {
+                div.style.display = "none";
+                arrow.style.transform = "rotate(0deg)";
+            }
+        }
+    </script>
+
+    
+
+<script>
+    function convert_cancelled_timestamp() {
+
+        
+        
+        var timeStamp;
+        try {
+            timeStamp = statusHistory && statusHistory.CANCELLED ? statusHistory.CANCELLED.timeStamp : undefined;
+        } catch (error) {
+            
+            return;
+        }
+        if (!timeStamp) {
+        return;
+        }
+        var date = new Date(timeStamp);
+
+        var year = date.getFullYear();
+        var month = ("0" + (date.getMonth() + 1)).slice(-2); // Months are 0-based in JavaScript
+        var day = ("0" + date.getDate()).slice(-2);
+        var hours = ("0" + date.getHours()).slice(-2);
+        var minutes = ("0" + date.getMinutes()).slice(-2);
+        var seconds = ("0" + date.getSeconds()).slice(-2);
+
+        var formattedDate = year + "-" + month + "-" + day + " " + hours + ":" + minutes + ":" + seconds;
+
+        document.getElementById('cancelledAt').textContent = formattedDate;
+    }
+
+    window.onload = function() {
+        convert_cancelled_timestamp();
+        /*var embed = document.getElementById('shippingLabelEmbed');
+        var printButton = document.getElementById('printButton');
+        var printButton2 = document.getElementById('printButton2');
+        if (embed.src) {
+            printButton.disabled = false;
+            printButton2.disabled = false;
+            embed.style.transform = "rotate(180deg)";
+        }*/
+    }
+
+</script>
+
+    <script>
+        function generateShippingLabel(fill_id) {
+        attribute = "package_weight"+fill_id;
+        package_weight = document.getElementById(attribute).value;
+        attribute = "package_dimension1"+fill_id;
+        package_dimension1 = document.getElementById(attribute).value;
+        attribute = "package_dimension2"+fill_id;
+        package_dimension2 = document.getElementById(attribute).value;
+        attribute = "package_dimension3"+fill_id;
+        package_dimension3 = document.getElementById(attribute).value;
+
+        if (!package_weight || !package_dimension1 || !package_dimension2 || !package_dimension3) {
+            alert("All fields must be filled out");
+            return;
+        }
+
+        //if weight is greater than 15 return error
+        if (package_weight > 15) {
+            alert("Package weight cannot be greater than 15 pounds");
+            return;
+        }
+
+
+        var userInput = prompt("Please enter your name:");
+        
+        if (userInput == null || userInput.trim() === '') {
+            alert("No name provided");
+        }
+        console.log("User input: " + userInput);
+        attribute = "shippingOptions"+fill_id;
+        var rate_service_code = document.getElementById(attribute).value;
+        var order_id = "{{order_id}}";
+        
+        fetch('/pharmacy/generate_shipping_label/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({order_id: order_id, fill_id: fill_id, personal_code: userInput,
+                 rate_service_code: rate_service_code, package_weight: package_weight, package_dimension1: package_dimension1,
+                 package_dimension2: package_dimension2, package_dimension3: package_dimension3}),
+        })
+        .then(response => {
+            if (response.status !== 200) {
+                response.json().then(data => {
+                    alert('Error: ' + response.status + ', ' + data.message + '. Generate Shipping Label Failed');
+                });
+                return;
+            }
+            location.reload();
+            
+            return response.json();
+        })
+        .then(data => {
+            var shippingLabelPdfUrl = data.shipping_label_pdf_url;
+                console.log(shippingLabelPdfUrl);
+                var shippingLabelEmbed = document.getElementById('shippingLabelEmbed');
+                shippingLabelEmbed.src = shippingLabelPdfUrl;
+                shippingLabelEmbed.style.transform = "rotate(180deg)";
+
+                var shippingLabelPdfUrl = document.getElementById('shippingLabelEmbed').src;
+            
+                if(shippingLabelPdfUrl !== "" && shippingLabelPdfUrl !== null){
+                    var printButton = document.getElementById('printButton');
+                    var printButton2 = document.getElementById('printButton2');
+                    if(printButton) {
+                        printButton.disabled = false;
+                        printButton2.disabled = false;
+                    }
+                }
+                       
+
+        });
+            
+        }
+    </script>
+
+    <script>
+        function closeForm() {
+            document.getElementById('popupForm').classList.add('hidden');
+        }
+    </script>
+
+    <script>
+        function generateFill(fill_type, integrated_label, pharmacistId)
+        {
+        if (integrated_label == 'True') {
+            if (pharmacistId === undefined || pharmacistId === null || pharmacistId.trim() === '') {
+                alert("Please select a pharmacist (PIC) from sidebar in Homepage!");
+                return;
+            }
+            console.log('pharmacistId: ', pharmacistId);
+        }
+
+        var script_dict = {};
+        
+        //for loop to create a dictionary where name is script name taken from script.name and quantity is entered by user using prompts
+        var scripts = {{ scripts|safe }};
+        var script_dict = {}; // Initialize script_dict
+
+        const form = document.getElementById('popupForm');
+        form.classList.remove('hidden');
+        const container = document.getElementById('scriptInputs');
+        container.innerHTML = ''; // Clear previous inputs
+
+        scripts.forEach((script, index) => {
+            var script_name = script.name;
+            const isSyringe = script_name.toLowerCase().includes('syringe');
+            var html = '';
+
+            if (fill_type === 'Partial' || fill_type === 'Force_Partial' || (!isSyringe && integrated_label == 'True')) {
+                html += `
+                <div>
+                    <hr class="solid">
+                    <label>${script.name}</label>
+                    <br/>
+                `;
+
+                if (fill_type === 'Partial' || fill_type === 'Force_Partial') {
+                    html += `
+                        <label>Quantity:</label>
+                        <input type="number" name="quantity${index}" required>
+                        <br/>
+                    `;
+                }
+
+                if (!isSyringe && integrated_label == 'True') {
+                    html += `
+                        <label>Batch Number:</label>
+                        <input type="text" name="batchNumber${index}" required>
+                        <br/>
+                        <label>Expiry Date:</label>
+                        <input type="date" name="expiryDate${index}" required>
+                        <br/>
+                    `;
+                }
+
+                html += '</div>';
+            }
+
+            container.innerHTML += html;
+        });
+
+        form.onsubmit = function(event) {
+            event.preventDefault();
+            const name = document.getElementById('name').value;
+            if (name === null || name.trim() === '') {
+                alert("No tech initials provided");
+                return;
+            }
+
+            scripts.forEach((script, index) => {
+                var script_name = script.name;
+                script_dict[script_name] = {};
+
+                if (fill_type === 'Partial' || fill_type === 'Force_Partial') {
+                    const quantity = document.querySelector(`input[name='quantity${index}']`).value;
+                    if (quantity === null || quantity.trim() === '' || isNaN(quantity) || quantity < 0) {
+                        alert("Please provide a valid quantity (0 or greater) for " + script_name);
+                        return;
+                    }
+                    script_dict[script_name]["quantity"] = quantity;
+                }
+
+                const isSyringe = script_name.toLowerCase().includes('syringe');
+                if (!isSyringe && integrated_label == 'True') {
+                    const batchNumber = document.querySelector(`input[name='batchNumber${index}']`).value;
+                    if (batchNumber === null || batchNumber.trim() === '') {
+                        alert("No lot# provided for " + script_name);
+                        return;
+                    }
+                    script_dict[script_name]["batch_number"] = batchNumber;
+
+                    const expiryDate = document.querySelector(`input[name='expiryDate${index}']`).value;
+                    if (expiryDate === null || expiryDate.trim() === '' || isNaN(new Date(expiryDate))) {
+                        alert("Invalid Date!. Please enter date in format MM/DD/YYYY or MM-DD-YYYY or YYYY/MM/DD or YYYY-MM-DD");
+                        return;
+                    }
+                    script_dict[script_name]["expiry_date"] = expiryDate;
+                }
+            });
+
+            console.log(script_dict);
+            closeForm();
+
+            var order_id = "{{order_id}}";
+            data_to_be_sent = {order_id: order_id, personal_code: name, fill_type: fill_type, script_dict: script_dict};
+            if (integrated_label == 'True') {
+                data_to_be_sent["pharmacist_id"] = pharmacistId;
+            }
+
+            if (fill_type === 'Force_Partial') {
+                data_to_be_sent['Force_Partial'] = "{{ request.session.can_reopen_order }}";
+                data_to_be_sent['fill_type'] = 'Partial';
+            }
+
+            fetch('/pharmacy/generate_fill/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data_to_be_sent),
+            })
+            .then(response => {
+                if (response.status !== 200) {
+                    return response.json().then(data => {
+                        alert('Error: ' + response.status + ' Generate Complete Fill Failed. Message: ' + data.message);
+                    });
+                }
+                location.reload();
+                return response.json();
+            });
+        };
+
+        }
+
+    </script>
+
+    <script>
+        function markOrder(order_status) 
+        {
+            if(order_status==='CANCELLED' && !confirm("Are you sure you want to cancel this order?")) {
+                return;
+            }
+            if(order_status==='COMPLETED' && !confirm("Are you sure you want to mark this order as complete?")) {
+                return;
+            }
+            var order_id = "{{internal_order_id}}";
+            var userInput = prompt("Please enter your name:");
+            var comment = prompt("Please enter the reason for cancel:");
+        if (userInput === null || userInput.trim() === '') {
+            alert("No name provided");
+            return;
+        }
+        fetch('/pharmacy/mark_order/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({order_id: order_id, personal_code: userInput, order_status: order_status,comment:comment}),
+        })
+        .then(response => {
+            if (response.status !== 200) {
+                alert('Error: ' + response.status +' Marking as Complete Failed');
+                return ;
+            }
+            location.reload();
+            return response.json();
+        });
+            
+        }
+
+    </script>
+
+    <script>
+    function markFill(order_status,order_id) 
+    {
+        if(order_status==='CANCELLED' && !confirm("Are you sure you want to cancel this fill?")) {
+            return;
+        }
+        
+        var order_id = order_id;
+        var userInput = prompt("Please enter your name:");
+        var comment = prompt("Please enter the reason for cancel:");
+    if (userInput === null || userInput.trim() === '') {
+        alert("No name provided");
+        return;
+    }
+    fetch('/pharmacy/mark_order/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({order_id: order_id, personal_code: userInput, order_status: order_status,comment:comment}),
+    })
+    .then(response => {
+        if (response.status !== 200) {
+            alert('Error: ' + response.status +' Marking as Complete Failed');
+            return ;
+        }
+        location.reload();
+        return response.json();
+    });
+        
+    }
+    </script>
+
+    <script>
+        function printIframe(label_url, is_fedex) {
+            //var url = document.getElementById('shippingLabelEmbed').src;
+            url = label_url;
+            
+            var proxyIframe = document.createElement('iframe');
+            var body = document.getElementsByTagName('body')[0];
+            body.appendChild(proxyIframe);
+            proxyIframe.style.width = '431px';
+            proxyIframe.style.height = '651px';
+            proxyIframe.style.display = 'none';
+
+            
+            if (is_fedex === 'True') {
+              proxyIframe.style.width = '100%';
+              proxyIframe.style.height = '100%';
+              proxyIframe.style.scale = '0.5';
+              proxyIframe.style.transformOrigin = 'top left';
+
+            }
+            else {
+              proxyIframe.style.width = '431px';
+              proxyIframe.style.height = '651px';
+            }
+            
+
+
+            var contentWindow = proxyIframe.contentWindow;
+            contentWindow.document.open();
+            // Set dimensions according to your needs.
+            // You may need to calculate the dynamically after the content has loaded
+            
+            if (is_fedex === 'True') {
+                
+                contentWindow.document.write('<iframe src="' + url + '" onload="print();" width="100%" height="100%" frameborder="0" marginheight="0" marginwidth="0" scale="0.5" transformOrigin="top left">');
+            }
+            else {
+                contentWindow.document.write('<iframe src="' + url + '" onload="print();" width="431px" height="651px" frameborder="0" style="transform:rotate(180deg);" marginheight="0" marginwidth="0">');
+            }
+            
+            contentWindow.document.close();
+        }
+    </script>
+
+    <script>
+        function convertDateTime(datetimeStr) {
+            const dateObj = new Date(datetimeStr);
+            const formattedDate = dateObj.toLocaleDateString('en-US', {
+                month: '2-digit',
+                day: '2-digit',
+                year: 'numeric',
+            });
+            const formattedTime = dateObj.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+
+            return `${formattedDate} ${formattedTime} UTC`;
+        }
+    </script>
+
+    <script>
+        function printShippingLabelWithPrescription(fill, physicianInfo, patientInfo, pharmacyInfo, prescriptionInfo, lowerLabelInfo) {
+            const label_url = fill.shipping_label_pdf_url;
+            if (fill.pharmacist) {
+                pharmacyInfo['pharmacist'] = fill.pharmacist;
+            }
+            if (fill.tech_initials) {
+                pharmacyInfo['tech'] = fill.tech_initials;
+            }
+
+            const is_fedex = pharmacyInfo['is_fedex'];
+            const integrated_label = pharmacyInfo['integrated_label'];
+            const upper_label_positioning = pharmacyInfo['upper_label_positioning'];
+            const lower_label_positioning = pharmacyInfo['lower_label_positioning'];
+
+            if (integrated_label !== 'True' || is_fedex === 'True') {
+                alert("Integrated label not active for this pharmacy!");
+                return;
+            }
+
+            if (is_fedex === 'True') {
+                alert("Cannot print for fedex labels yet");
+                return;
+            }
+
+            //var url = document.getElementById('shippingLabelEmbed').src;
+            url = label_url;
+
+            var proxyIframe = document.createElement('iframe');
+            var body = document.getElementsByTagName('body')[0];
+            body.appendChild(proxyIframe);
+            proxyIframe.style.width = '431px';
+            proxyIframe.style.height = '651px';
+            proxyIframe.style.display = 'none';
+            
+            
+            
+            if (is_fedex === 'True') {
+              proxyIframe.style.width = '831px';
+              proxyIframe.style.height = '1251px';
+            }
+
+            var labelContent = `{% include "prescription_label.html" %}`;
+
+            var contentWindow = proxyIframe.contentWindow;
+            contentWindow.document.open();
+            contentWindow.document.write(labelContent); // Ensure the body element is created
+            contentWindow.document.close();
+
+            const shippingLabelDiv = contentWindow.document.getElementById('shipping-label');
+
+            if (shippingLabelDiv) {
+                const iframe = document.createElement('iframe');
+                iframe.src = url;
+                iframe.style.margin = '0';
+                iframe.style.marginTop = '-15px';
+                iframe.style.padding = '0';
+                iframe.style.border = '0';
+                iframe.style.fontSize = '100%';
+                iframe.style.font = 'inherit';
+                iframe.style.verticalAlign = 'baseline';
+                
+                
+
+                if (upper_label_positioning) {
+                    iframe.style.position = 'relative';
+                    iframe.style.top = upper_label_positioning.top + 'px';
+                    iframe.style.bottom = upper_label_positioning.bottom + 'px';
+                    iframe.style.left = upper_label_positioning.left + 'px';
+                    iframe.style.right = upper_label_positioning.right + 'px';
+                }
+                if (lower_label_positioning) {
+                    const lowerLabelDiv = contentWindow.document.getElementById('prescription-label');
+                    lowerLabelDiv.style.position = 'relative';
+                    lowerLabelDiv.style.top = lower_label_positioning.top + 'px';
+                    lowerLabelDiv.style.bottom = lower_label_positioning.bottom + 'px';
+                    lowerLabelDiv.style.left = lower_label_positioning.left + 'px';
+                    lowerLabelDiv.style.right = lower_label_positioning.right + 'px';
+                }
+
+                // Set dimensions according to your needs.
+                // You may need to calculate the dynamically after the content has loaded
+                if (is_fedex === 'True') {
+                  iframe.style.width = '831px';
+                  iframe.style.height = '1251px';
+                }
+                else {
+                  iframe.style.width = '431px';
+                  iframe.style.height = '651px';
+                  
+                  iframe.style.transform = 'rotate(180deg)';
+                  
+                }
+
+                const pharmacyInfoDiv = contentWindow.document.getElementById('pharmacy-info');
+                pharmacyInfoDiv.innerHTML = pharmacyInfo['name'] + '<br/>' + pharmacyInfo['address']['line1'] + ', ' + pharmacyInfo['address']['state_code'] + ' ' + pharmacyInfo['address']['zip_code'] + '<br/>' + pharmacyInfo['phoneNumber'];
+
+                const patientDetailsDiv = contentWindow.document.getElementById('patient-details');
+                patientDetailsDiv.innerHTML = lowerLabelInfo['title'] + '<br /><br /><span class="drug-name">' + lowerLabelInfo['drug_name'] + '</span><br /><span class="instructions">' + lowerLabelInfo['subtitle'] + '</span>';
+
+                const scriptRecordDiv = contentWindow.document.getElementById('script-record');
+                const fillDate = convertDateTime(fill.fill_date);
+                pharmacyInfo['reviewed_on'] = fillDate;
+                pharmacyInfo['dispensed_on'] = convertDateTime(fill.statusHistory.LABEL_CREATED.timeStamp);
+                pharmacyInfo['tracking_number'] = fill.tracking_number;
+                pharmacyInfo['pic'] = fill.pharmacist_id ? fill.pharmacist_id : '';
+                scriptRecordDiv.innerHTML = `
+                    <h1>Prescription #${prescriptionInfo['id']}</h1>
+                    <h2>Physician Info</h2>
+                    <table>
+                        <tr>
+                            <td>Clinic: ${physicianInfo['clinic']}</td>
+                            <td>Name: ${physicianInfo['name']}</td>
+                            <td>NPI: ${physicianInfo['npi']}</td>
+
+                        </tr>
+                        <tr>
+                            <td>License: ${physicianInfo['license']}</td>
+                            <td>Address: ${physicianInfo['address']}</td>
+                            <td>Phone: ${physicianInfo['phoneNumber']}</td>
+                        </tr>
+                    </table>
+                    <h2>Patient Info</h2>
+                    <table>
+                    <tr>
+                        <td>Name: ${patientInfo['name']}</td>
+                        <td>DOB: ${patientInfo['dob']}</td>
+                        <td>Gender: ${patientInfo['gender']}</td>
+                    </tr>
+                    <tr>
+                        <td>Address: ${patientInfo['address']}</td>
+                        <td>Phone: ${patientInfo['phoneNumber']}</td>
+                        <td>Email: ${patientInfo['email']}</td>
+                    </tr>
+                    <tr>
+                        <td>Medical Info: ${patientInfo['medical_info']} </td>
+                        <td>Allergies: ${patientInfo['allergies']}</td>
+                        <td>Diagnosis: ${patientInfo['diagnosis']}</td>
+                    </tr>
+                    </table>
+                    <h2>Pharmacy Info</h2>
+                    <table>
+                    <tr>
+                        <td>Reviewed on: ${pharmacyInfo['reviewed_on']}</td>
+                        <td>PIC: ${pharmacyInfo['pic']}</td>
+                        <td>License: ${pharmacyInfo['pic_license']}</td>
+                    </tr>
+                    <tr>
+                        <td>Dispensed On: ${pharmacyInfo['dispensed_on']}</td>
+                        <td>Dispensing Notes: ${pharmacyInfo['dispensing_notes']}</td>
+                        <td>Tracking Number: ${pharmacyInfo['tracking_number']}</td>
+                    </tr>
+                    <tr>
+                        <td>Pharmacy: ${pharmacyInfo['name']}</td>
+                        <td>Pharmacy License: ${pharmacyInfo['pharmacy_license']}</td>
+                        <td>NCPDPD ID: ${pharmacyInfo['ncpdpid']}</td>
+                    </tr>
+                    </table>
+                    <h2>Prescription Info</h2>
+                `;
+
+                var scriptExternalID = '';
+                var scriptQuantity = '';
+                for (scriptIndex in prescriptionInfo['scripts']) {
+                    const scriptNumber = parseInt(scriptIndex) + 1;
+                    const scriptInfo = prescriptionInfo['scripts'][scriptIndex];
+                    const scriptInfoDrugName = scriptInfo['name'];
+                    const item = fill.items.find((item) => item.name === scriptInfoDrugName);
+                    const unit = item.dispense_unit.toLowerCase().includes('milliliter') ? 'ml' : item.dispense_unit;
+                    const scriptInfoQuantity = item ? `${item.dispense_quantity} ${unit}` : '';
+                    const isSyringe = scriptInfoDrugName.toLowerCase().includes('syringe')
+
+                    const batchNo = item.batch_number ? item.batch_number : '';
+                    const expiryDate = item.expiry_date ? item.expiry_date : '';
+
+                    if (scriptIndex == 0) {
+                        scriptExternalID = scriptInfo['external_id'];
+                        scriptQuantity = scriptInfoQuantity;
+                        scriptUseByDate = expiryDate;
+                    }
+
+                    scriptRecordDiv.innerHTML += `
+                        <h3>${scriptNumber}. ${scriptInfoDrugName}</h3>
+                        <table>
+                        <tr>
+                            <td>Date Written: ${scriptInfo['date_written']}</td>
+                            <td>Type: ${scriptInfo['type']}</td>
+                            <td>Refills: ${scriptInfo['refills']}</td>
+                            <td>External ID: ${scriptExternalID}</td>
+                        </tr>
+                        <tr>
+                            <td>Quantity: ${scriptInfoQuantity}</td>
+                            <td>Product ID: ${scriptInfo['product_id']}</td>
+                            <td>Batch: #${batchNo}</td>
+                            <td>Beyond Use Date: ${expiryDate} </td>
+                        </tr>
+                        <tr>
+                    `;
+
+                    if (isSyringe) {
+                        scriptRecordDiv.innerHTML += `
+                            <td colspan="3">
+                            Directions: Use disposable needles weekly for SQ injections
+                            </td>
+                        `;
+                    }
+                    else {
+                        scriptRecordDiv.innerHTML += `
+                            <td colspan="4">Sig: ${scriptInfo['sig']}</td>
+                        `;
+                    }
+
+                    scriptRecordDiv.innerHTML += `
+                        </tr>
+                        </table>
+                        <hr />
+                    `;
+                }
+
+                scriptRecordDiv.innerHTML += `
+                    <hr />
+                    <p>
+                        Note: The compounded medications listed are made at the request of the prescribing
+                        practitioner whose signature appears above due ot the medical need of a
+                        specific patient and the preparation is prescibed becuase the prescriber has
+                        determined that the preparation will produce a clinically significant
+                        therapeutic response compared to a commericially available product.
+                    </p>
+                    <p>
+                        Note: This is a confidential medical record. You can find more information about this prescription by logging in here
+                        <span id="qrcode"></span>
+                    </p>
+                `;
+
+                // generate the QR code
+                const qrCodeEl = contentWindow.document.getElementById('qrcode');
+                const qrText = "https://dev-ship.5axis.health/pharmacy/show_order_details/?order_id=" + prescriptionInfo['order_id'];
+                var qrcode = new QRCode(qrCodeEl, {
+                    text: qrText,
+                    width: 256,
+                    height: 256,
+                    colorDark : "#000000",
+                    colorLight : "#ffffff",
+                    correctLevel : QRCode.CorrectLevel.H
+                });
+                var img = qrCodeEl.getElementsByTagName('img')[0];
+                img.style.width = '0.5in';
+                img.style.height = '0.5in';
+                img.style.display = 'unset';
+
+                // once the img is loaded, unset its default display to render according to our style
+                function generateBarCode() {
+                    img.style.display = 'unset';
+                }
+
+                const rxNumberDiv = contentWindow.document.getElementById('rx-number');
+                rxNumberDiv.innerHTML = `
+                    This is a compounded product <br />
+                    Rx #${fill.fill_id}, Qty: ${scriptQuantity} <br />
+                    Filled: ${fillDate ? fillDate.split(" ")[0] : ''} <br/>
+                    Use By: ${scriptUseByDate}
+                `;
+
+                const doctorInfoDiv = contentWindow.document.getElementById('doctor-info');
+                doctorInfoDiv.innerHTML = `
+                    Prescriber: ${physicianInfo['name']} <br />
+					${physicianInfo['phoneNumber']} <br/>
+                    Pharm: ${pharmacyInfo['pharmacist']} Tech: ${pharmacyInfo['tech']}
+                `;
+
+                iframe.onload = function() {
+                    // Wait for all iframes to load before printing
+                    generateBarCode();
+                    setTimeout(function() {
+                        //var w = window.open('', 'wnd');
+                        //w.document.body.innerHTML = contentWindow.document.body.innerHTML;
+                        contentWindow.print();// Print all at once
+                    }, 1000);
+                };
+
+                shippingLabelDiv.appendChild(iframe); // Append the label iframe to the designated div
+            } else {
+                console.error('shipping-label div not found in prescription_label.html');
+            }
+        }
+    </script>
+
+    <script>
+    function updateAddress(){
+    
+    var order_id = "{{internal_order_id}}";
+    var address = document.getElementById('address_input').value;
+    var line2 = document.getElementById('line2_input').value;
+    var city = document.getElementById('city_input').value;
+    var state = document.getElementById('state_input').value;
+    var zipCode = document.getElementById('zipCode_input').value;
+    var address_certify = document.getElementById('address_certify').checked;
+
+    data_to_update = {order_id: order_id, address: address, line2: line2, city: city, state: state, zipCode: zipCode, skip_validation: address_certify}
+
+    fetch('/pharmacy/update_order_address/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'token': 'bjhsabhkabfj4565a',
+        },
+        body: JSON.stringify({"data":data_to_update}),
+    })
+    .then(response => {
+        if (response.status !== 200) {
+                response.json().then(data => {
+                    alert('Error: ' + response.status + ', ' + data.message + '. Cannot update address');
+                });
+                return;
+            }
+        location.reload();
+        return response.json();
+    });
+        
+    }  
+
+    </script>
+    
+    <script>
+        function showEditAddressFields() {
+            var editAddressFields = document.getElementById('edit_address_fields');
+            if (editAddressFields.style.display === 'none' || editAddressFields.style.display === '') {
+                editAddressFields.style.display = 'block';
+            } else {
+                editAddressFields.style.display = 'none';
+            }
+        }
+    </script>
+
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+</body>
+
+
+
+</html>
