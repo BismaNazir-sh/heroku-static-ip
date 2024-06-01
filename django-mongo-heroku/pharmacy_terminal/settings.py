@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'pharmacy',
     'management',
-    'celery_progress'
 ]
 
 MIDDLEWARE = [
@@ -151,10 +150,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # https://docs.djangoproject.com/en/4.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
-CELERY_BROKER_URL = CONFIG_REDIS_URL
-CELERY_RESULT_BACKEND  = CONFIG_REDIS_URL
-CELERY_TASK_SERIALIZER = 'json'
 
 
 LOGGING = {

@@ -1,3 +1,2 @@
 web: python manage.py runserver 0.0.0.0:\$PORT"
 web: gunicorn pharmacy_terminal.wsgi --workers $WEB_CONCURRENCY --threads $DJANGO_THREADS
-worker: celery -A pharmacy_terminal worker -l info --concurrency 2
