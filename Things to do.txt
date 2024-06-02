@@ -1,3 +1,0 @@
-Deploy (Done)
-Disable auth (Done)
-Add Custom auth ()
