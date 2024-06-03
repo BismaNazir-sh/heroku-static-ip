@@ -23,7 +23,7 @@ def get_data():
         print('got db')
         # Replace 'drugs' with the name of your collection
         collection = db['shipwrecks']
-        data = collection.find()
+        data = collection.find({}.limit(10))
         print("got collection")
         data_list = list(data)
         for item in data_list:
