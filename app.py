@@ -1,9 +1,7 @@
-import os
 import pymongo
 import socks
 import socket
 import ssl
-import logging
 
 # pymongo==3.12.3
 # dnspython==2.2.1
@@ -58,7 +56,7 @@ def get_data():
 if __name__ == '__main__':
         get_data()
 
-        
+
 # import os
 # import requests
 
