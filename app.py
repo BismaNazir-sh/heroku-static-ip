@@ -11,17 +11,17 @@ except:
     pass
 
 MONGODB_URI = env.str('MONGODB_URI', default="mongodb+srv://Bisma:Bisma123@cluster0.r1tthak.mongodb.net/")
-
+MONGODB_URI = "mongodb+srv://Bisma:Bisma123@cluster1.lham6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1"
 def get_data():
     try:
         # Connect to MongoDB
         client = pymongo.MongoClient(
             MONGODB_URI
         )
-        db = client['sea-turtle']
+        db = client['sample_geospatial']
 
         # Replace 'drugs' with the name of your collection
-        collection = db['drugs']
+        collection = db['shipwrecks']
         data = collection.find()
         data_list = list(data)
         for item in data_list:
