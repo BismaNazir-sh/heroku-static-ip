@@ -10,7 +10,24 @@ try:
 except:
     pass
 
+import socks
+import socket
+
+
 MONGODB_URI = env.str('MONGODB_URI', default="mongodb+srv://Bisma:Bisma123@cluster0.r1tthak.mongodb.net/")
+FIXIE_SOCKS_HOST = env.str('FIXIE_SOCKS_HOST')
+
+# Parse FIXIE_SOCKS_HOST
+fixie_data = FIXIE_SOCKS_HOST.split(':')
+proxy_username = fixie_data[0]
+proxy_password = fixie_data[1]
+proxy_host = fixie_data[2]
+proxy_port = int(fixie_data[3])
+
+# Configure the SOCKS5 proxy
+socks.set_default_proxy(socks.SOCKS5, proxy_host, proxy_port, username=proxy_username, password=proxy_password)
+socket.socket = socks.socksocket
+
 
 def get_data():
     try:
