@@ -48,7 +48,7 @@ external_url = 'http://httpbin.org/ip'
 
 try:
     # Make a request to the external service
-    response = requests.get(external_url, proxies=proxies)
+    response = requests.get(external_url) #, proxies=proxies)
     print("Response status code:", response.status_code)
     print("Your outbound IP is:", response.json()["origin"])
 except requests.exceptions.RequestException as e:
