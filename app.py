@@ -16,9 +16,7 @@ def get_data():
     try:
         # Connect to MongoDB
         client = pymongo.MongoClient(
-            MONGODB_URI,
-            tls=True,
-            tlsAllowInvalidCertificates=True
+            MONGODB_URI
         )
         db = client['sea-turtle']
 
