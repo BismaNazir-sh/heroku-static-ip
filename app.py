@@ -1,3 +1,4 @@
+
 import pymongo
 
 
@@ -8,7 +9,6 @@ try:
     environ.Env.read_env()
 except:
     pass
-
 
 MONGODB_URI = env.str('MONGODB_URI', default="mongodb+srv://Bisma:Bisma123@cluster0.r1tthak.mongodb.net/")
 
@@ -56,7 +56,7 @@ if __name__ == '__main__':
 # try:
 #     # Make a request to the external service
 #     response = requests.get(external_url) #, proxies=proxies)
-#     print("Response status code:", response.status_code)
-#     print("Your outbound IP is:", response.json()["origin"])
+#     print("Response status code:", response)
+#     print("Your outbound IP is:", response.json())
 # except requests.exceptions.RequestException as e:
 #     print(f"An error occurred: {e}")
