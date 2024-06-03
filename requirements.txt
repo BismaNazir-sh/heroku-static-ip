@@ -1,5 +1,5 @@
 pymongo[srv]==3.11.4
-dnspython==1.16.0
+dnspython==2.2.1
 django-environ==0.10.0
 requests==2.25.1
 pysocks==1.7.1
