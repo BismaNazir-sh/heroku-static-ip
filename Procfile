@@ -1,1 +1,1 @@
-web: bin/qgtunnel python app.py
+worker: python app.py
