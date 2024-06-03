@@ -5,11 +5,6 @@ import socks
 import socket
 import logging
 
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-
 try:
     import environ
 
@@ -20,16 +15,18 @@ except:
 
 try:
     MONGODB_URI = env.str('MONGODB_URI', default="mongodb+srv://Bisma:Bisma123@cluster0.r1tthak.mongodb.net/")
-    client = MongoClient(MONGODB_URI)
-    db = client['sea-turtle']
     QUOTAGUARDSTATIC_URL = env.str('QUOTAGUARDSTATIC_URL')
 
+    
     # Parse QuotaGuard Static URL
     proxy_url = QUOTAGUARDSTATIC_URL.replace('http://', '').replace('https://', '')
-    proxy_host, proxy_port = proxy_url.split('@')[1].split(':')[0], int(proxy_url.split('@')[1].split(':')[1])
+    proxy_auth, proxy_hostport = proxy_url.split('@')
+    proxy_host, proxy_port = proxy_hostport.split(':')
+    proxy_port = int(proxy_port)
+    proxy_username, proxy_password = proxy_auth.split(':')
 
     # Configure the SOCKS5 proxy
-    socks.set_default_proxy(socks.SOCKS5, proxy_host, proxy_port, username=proxy_url.split('@')[0].split(':')[0], password=proxy_url.split('@')[0].split(':')[1])
+    socks.set_default_proxy(socks.SOCKS5, proxy_host, proxy_port, username=proxy_username, password=proxy_password)
     socket.socket = socks.socksocket
 
     def get_data():
@@ -44,10 +41,10 @@ try:
         data_list = list(data)
         for item in data_list:
             item['_id'] = str(item['_id'])  # Convert ObjectId to string
-            logger.info(f'Item: {item}')
+            print(f'Item: {item}')
         return data_list
 except Exception as e:
-        logger.error(f"Failed to fetch data: {e}")
+        print(f"Failed to fetch data: {e}")
 
 if __name__ == '__main__':
         get_data()
