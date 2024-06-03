@@ -16,7 +16,6 @@ except:
 try:
     MONGODB_URI = env.str('MONGODB_URI', default="mongodb+srv://Bisma:Bisma123@cluster0.r1tthak.mongodb.net/")
     QUOTAGUARDSTATIC_URL = env.str('QUOTAGUARDSTATIC_URL')
-
     
     # Parse QuotaGuard Static URL
     proxy_url = QUOTAGUARDSTATIC_URL.replace('http://', '').replace('https://', '')
@@ -28,11 +27,12 @@ try:
     # Configure the SOCKS5 proxy
     socks.set_default_proxy(socks.SOCKS5, proxy_host, proxy_port, username=proxy_username, password=proxy_password)
     socket.socket = socks.socksocket
-
+    MONGODB_URI = MONGODB_URI + "?proxyHost=<proxyHost>" + "&proxyPort=<proxyPort>" + "&proxyUsername=<proxyUsername>" + "&proxyPassword=<proxyPassword>"
+    
     def get_data():
         
         # Connect to MongoDB
-        client = pymongo.MongoClient(MONGODB_URI, tls=True, tlsAllowInvalidCertificates=True)
+        client = MongoClient(MONGODB_URI, tls=True, tlsAllowInvalidCertificates=True)
         db = client['sea-turtle']
 
         # Replace 'drugs' with the name of your collection
