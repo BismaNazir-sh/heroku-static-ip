@@ -1,13 +1,6 @@
 import pymongo
-import socks
-import socket
-import ssl
 
-# pymongo==3.12.3
-# dnspython==2.2.1
-# django-environ==0.10.0
-# requests==2.25.1
-# pysocks==1.7.1
+
 try:
     import environ
 
@@ -18,17 +11,6 @@ except:
 
 
 MONGODB_URI = env.str('MONGODB_URI', default="mongodb+srv://Bisma:Bisma123@cluster0.r1tthak.mongodb.net/")
-QUOTAGUARDSTATIC_URL = env.str('QUOTAGUARDSTATIC_URL')
-
-proxy_url = QUOTAGUARDSTATIC_URL.replace('http://', '').replace('https://', '')
-proxy_auth, proxy_hostport = proxy_url.split('@')
-proxy_host, proxy_port = proxy_hostport.split(':')
-proxy_port = int(proxy_port)
-proxy_username, proxy_password = proxy_auth.split(':')
-
-# Configure the SOCKS5 proxy
-socks.set_default_proxy(socks.SOCKS5, proxy_host, proxy_port, username=proxy_username, password=proxy_password)
-socket.socket = socks.socksocket
 
 def get_data():
     try:
