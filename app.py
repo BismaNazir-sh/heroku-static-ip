@@ -12,7 +12,7 @@ socks.set_default_proxy(socks.SOCKS5, proxy_host, proxy_port, username=proxy_use
 socket.socket = socks.socksocket
 
 # MongoDB connection string
-mongo_uri = "mongodb+srv://Bisma:Bisma123@cluster1.lham6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1&connectTimeoutMS=30000"
+mongo_uri = "mongodb+srv://Bisma:Bisma123@cluster1.lham6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1&connectTimeoutMS=30000&ssl=true&ssl_cert_reqs=CERT_NONE"
 
 # Connect to MongoDB
 client = pymongo.MongoClient(mongo_uri)
