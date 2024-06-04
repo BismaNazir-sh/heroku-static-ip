@@ -33,6 +33,7 @@ prometheus-client==0.17.1
 prompt-toolkit==3.0.43
 psycopg2==2.9.3
 pymongo==3.12.3
+PySocks==1.7.1
 python-dateutil==2.9.0.post0
 pytz==2024.1
 redis==4.5.5
