@@ -10,8 +10,35 @@ try:
 except:
     pass
 
-MONGODB_URI = env.str('MONGODB_URI', default="mongodb+srv://Bisma:Bisma123@cluster0.r1tthak.mongodb.net/")
-#MONGODB_URI = "mongodb+srv://Bisma:Bisma123@cluster1.lham6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1"
+#MONGODB_URI = env.str('MONGODB_URI', default="mongodb+srv://Bisma:Bisma123@cluster0.r1tthak.mongodb.net/")
+
+
+
+import os
+import requests
+
+# Fetch the QuotaGuard Static proxy URL from environment variable
+QUOTAGUARDSTATIC_URL = env.str('QUOTAGUARDSTATIC_URL')
+
+# Set up the proxies dictionary
+proxies = {
+    "http": QUOTAGUARDSTATIC_URL,
+    "https": QUOTAGUARDSTATIC_URL,
+}
+
+# URL to check outbound IP address
+external_url = 'https://api.ipify.org?format=json'
+
+try:
+    # Make a request to the external service
+    response = requests.get(external_url) #, proxies=proxies)
+
+    print("Response status code:", response)
+    print("Your outbound IP is:", response.json())
+except requests.exceptions.RequestException as e:
+    print(f"An error occurred: {e}")
+
+MONGODB_URI = "mongodb+srv://Bisma:Bisma123@cluster1.lham6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1"
 def get_data():
     try:
         # Connect to MongoDB
@@ -22,8 +49,9 @@ def get_data():
 
         # Replace 'drugs' with the name of your collection
         collection = db['shipwrecks']
-        data = collection.find()
+        data = collection.find().limit(10)
         data_list = list(data)
+        print("got list")
         for item in data_list:
             item['_id'] = str(item['_id'])  # Convert ObjectId to string
             print(f'Item: {item}')
@@ -34,27 +62,3 @@ def get_data():
 
 if __name__ == '__main__':
         get_data()
-
-
-# import os
-# import requests
-
-# # Fetch the QuotaGuard Static proxy URL from environment variable
-# QUOTAGUARDSTATIC_URL = env.str('QUOTAGUARDSTATIC_URL')
-
-# # Set up the proxies dictionary
-# proxies = {
-#     "http": QUOTAGUARDSTATIC_URL,
-#     "https": QUOTAGUARDSTATIC_URL,
-# }
-
-# # URL to check outbound IP address
-# external_url = 'http://httpbin.org/ip'
-
-# try:
-#     # Make a request to the external service
-#     response = requests.get(external_url) #, proxies=proxies)
-#     print("Response status code:", response)
-#     print("Your outbound IP is:", response.json())
-# except requests.exceptions.RequestException as e:
-#     print(f"An error occurred: {e}")
