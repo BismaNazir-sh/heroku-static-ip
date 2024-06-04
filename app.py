@@ -31,7 +31,7 @@ external_url = 'https://api.ipify.org?format=json'
 
 try:
     # Make a request to the external service
-    response = requests.get(external_url) #, proxies=proxies)
+    response = requests.get(external_url, proxies=proxies)
 
     print("Response status code:", response)
     print("Your outbound IP is:", response.json())
