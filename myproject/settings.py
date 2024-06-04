@@ -12,7 +12,16 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 
 from pathlib import Path
 import os
-import dj_database_url
+
+try:
+    import environ
+
+    env = environ.Env()
+    environ.Env.read_env()
+except:
+    pass
+
+MONGODB_URI = env.str('MONGODB_URI')
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -78,8 +87,19 @@ WSGI_APPLICATION = "myproject.wsgi.application"
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(default='sqlite:///db.sqlite3')
+    'default': {
+        'ENGINE': 'djongo',
+        'NAME': 'sample_geospatial',
+        'ENFORCE_SCHEMA': False,
+        'CLIENT': {
+            'host': MONGODB_URI,
+            'username': 'Bisma',  # Optional
+            'password': 'Bisma123',  # Optional
+            'authMechanism': 'SCRAM-SHA-1',  # Optional
+        }
+    }
 }
+
 
 
 # Password validation
