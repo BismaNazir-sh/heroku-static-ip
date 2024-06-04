@@ -1,1 +1,1 @@
-worker: bin/qgtunnel python app.py 52.5.238.209/27017
+worker: bin/qgtunnel python app.py 52.5.238.209
