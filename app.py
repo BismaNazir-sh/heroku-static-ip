@@ -1,66 +1,24 @@
-
+import socks
+import socket
 import pymongo
 
+# Set up the SOCKS5 proxy
+proxy_host = "us-east-static-02.quotaguard.com"
+proxy_port = 9293  # Use the appropriate port from Quotaguard
+proxy_username = "t8n4lainx2fmf4"
+proxy_password = "6n3kugd661dpcoj7pzm5yu4w1k3"
 
-try:
-    import environ
+socks.set_default_proxy(socks.SOCKS5, proxy_host, proxy_port, username=proxy_username, password=proxy_password)
+socket.socket = socks.socksocket
 
-    env = environ.Env()
-    environ.Env.read_env()
-except:
-    pass
+# MongoDB connection string
+mongo_uri = "mongodb+srv://Bisma:Bisma123@cluster1.lham6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1&connectTimeoutMS=30000"
 
-#MONGODB_URI = env.str('MONGODB_URI', default="mongodb+srv://Bisma:Bisma123@cluster0.r1tthak.mongodb.net/")
+# Connect to MongoDB
+client = pymongo.MongoClient(mongo_uri)
+db = client['sample_airbnb']
+collection = db['listingsAndReviews']
 
-
-
-import os
-import requests
-
-# Fetch the QuotaGuard Static proxy URL from environment variable
-QUOTAGUARDSTATIC_URL = env.str('QUOTAGUARDSTATIC_URL')
-
-# Set up the proxies dictionary
-proxies = {
-    "http": QUOTAGUARDSTATIC_URL,
-    "https": QUOTAGUARDSTATIC_URL,
-}
-
-# URL to check outbound IP address
-external_url = 'https://api.ipify.org?format=json'
-
-try:
-    # Make a request to the external service
-    response = requests.get(external_url, proxies=proxies)
-
-    print("Response status code:", response)
-    print("Your outbound IP is:", response.json())
-except requests.exceptions.RequestException as e:
-    print(f"An error occurred: {e}")
-
-MONGODB_URI = "mongodb+srv://Bisma:Bisma123@cluster1.lham6.mongodb.net/?retryWrites=true&w=majority&appName=Cluster1"
-def get_data():
-    try:
-        print("in try")
-        # Connect to MongoDB
-        client = pymongo.MongoClient(
-            MONGODB_URI
-        )
-        db = client['sample_geospatial']
-        print('got db')
-        # Replace 'drugs' with the name of your collection
-        collection = db['shipwrecks']
-        data = collection.find({}).limit(10)
-        print("got collection")
-        data_list = list(data)
-        print("got list")
-        for item in data_list:
-            item['_id'] = str(item['_id'])  # Convert ObjectId to string
-            print(f'Item: {item}')
-        return data_list
-    except Exception as e:
-        print(f"Failed to fetch data: {e}")
-
-
-if __name__ == '__main__':
-        get_data()
+# Example query
+document = collection.find_one()
+print(document)
